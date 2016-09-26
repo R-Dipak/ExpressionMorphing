@@ -10,7 +10,7 @@
 #include <cv.h>
 #include <highgui.h>
 typedef dlib::full_object_detection fod;
-#define eps 10
+#define eps 1
 //using namespace dlib;
 using namespace std;
 using namespace cv;
@@ -29,7 +29,7 @@ class Face{
 	dlib::full_object_detection shape;        // Landmark points
 	vector<Point2f> shape2;
 	Subdiv2D subdiv;
-//	vector<Point2f> Create_morphed_landMark(const fod &Normal, const fod &express, const fod &tobpr);
+	void Create_morphed_landMark();//const fod &Normal, const fod &express, const fod &tobpr);
 	void DelaunayTriangulate(int fl);
 
 	void equalize(int i =0){
@@ -57,20 +57,24 @@ class Face{
 		srcTri.push_back ( Point(cvRound(s[2]), cvRound(s[3])));
 		srcTri.push_back(Point(cvRound(s[4]), cvRound(s[5])));
 	}
-//	void AffineTransform();
+	void AffineTransform();
 }Faces[4];
 
-/*
 void Face::AffineTransform(){
 	Mat rot_mat( 2, 3, CV_32FC1 );
 	Mat warp_mat( 2, 3, CV_32FC1 );
-      vector<Point2f> srcTri,dstTri;
-		srcTri.push_back(shape2[0]);
-		srcTri.push_back(shape2[1]);
-		srcTri.push_back(shape2[2]);
-		dstTri.push_back(Point2f(shape2[0].x-10,shape2[0].y+6));
-		dstTri.push_back(Point2f(shape2[1].x,shape2[1].y+2));
-		srcTri.push_back(Point2f(shape2[2].x+10,shape2[0].y+6));
+	for(int i =0; i< Tlist.size(); i++){
+	   vector<Point2f> srcTri,dstTri;int a = Tlist[i].id1, b = Tlist[i].id2, c=  Tlist[i].id3;
+		Point2f stri[3], dtri[3];
+		srcTri.push_back(Faces[2].shape2[a]);
+		srcTri.push_back(Faces[2].shape2[b]);
+		srcTri.push_back(Faces[2].shape2[c]);
+		dstTri.push_back(Faces[3].shape2[a]);
+		dstTri.push_back(Faces[3].shape2[b]);
+		dstTri.push_back(Faces[3].shape2[c]);
+		stri[0] = srcTri[0];dtri[0 ] =dstTri[0];
+		stri[1] = srcTri[1];dtri[1] = dstTri[1];
+		stri[2] = srcTri[2];dtri[2] = dstTri[2];
 
 		{
 		Rect srcrct = boundingRect( (srcTri)	),dstrct = boundingRect ( (dstTri)) ;	
@@ -81,21 +85,35 @@ void Face::AffineTransform(){
 		dstTri[1].x-=dstrct.x;dstTri[1].y-=dstrct.y;
 		dstTri[2].x-=dstrct.x;dstTri[2].y-=dstrct.y;
 
-		Mat imga = img(srcrct).clone(),imgb = img(dstrct).clone();
-		warp_mat = getAffineTransform( srcTri, dstTri );
+      stri[0].x-=srcrct.x;stri[0].y-=srcrct.y;
+		stri[1].x-=srcrct.x;stri[1].y-=srcrct.y;
+		stri[2].x-=srcrct.x;stri[2].y-=srcrct.y;
+		dtri[0].x-=dstrct.x;dtri[0].y-=dstrct.y;
+		dtri[1].x-=dstrct.x;dtri[1].y-=dstrct.y;
+		dtri[2].x-=dstrct.x;dtri[2].y-=dstrct.y;
 
-		warpAffine( imga, imgb, warp_mat, imgb.size() ,BORDER_REFLECT_101);
+		Mat imga = Faces[2].img(srcrct).clone(),imgb = Faces[3].img(dstrct).clone();
+//		imshow("b4",imga);
+//		waitKey(0);
+		warp_mat = getAffineTransform( stri,dtri );
+
+		warpAffine( imga, imgb, warp_mat, imgb.size(), BORDER_REFLECT_101);
+//		imshow("ThisTriangle",imgb);
+//		waitKey(200);
 		Mat kernel = Mat::zeros(imgb.rows,imgb.cols, CV_8UC1);
 		Point dstr[3] = {dstTri[0], dstTri[1], dstTri[2]};
 		fillConvexPoly(kernel,dstr,3,Scalar(255));
-		add(imgb, img(dstrct), img(dstrct), kernel);
+		add( Faces[3].img(dstrct), imgb,Faces[3].img(dstrct), kernel);
+		//imshow("ThisTriangle?",imgb);
+		//waitKey(100);
 		}
-	
+
+	}	
 	namedWindow( "Display window", WINDOW_AUTOSIZE );
 	imshow( "Display window",img );
    waitKey(0);
 }
-*/
+
 void Face::DelaunayTriangulate(int fl){
 	Rect rect(0, 0, img.size().width, img.size().height);
 	Subdiv2D subdiv(rect); 
@@ -126,40 +144,32 @@ void Face::DelaunayTriangulate(int fl){
 		b = findindex(pt[1]);
 		c = findindex(pt[2]);Triangle now(a,b,c);
 		Tlist.push_back(now);
-//		cout<<a<<' '<<b<<' '<<c<<endl;
+		cout<<a<<' '<<b<<' '<<c<<endl;
 			line(img1, pt[0], pt[1], Scalar(255,0,255), 1, CV_AA, 0);
 			line(img1, pt[1], pt[2], Scalar(255,0,255), 1, CV_AA, 0);
 			line(img1, pt[2], pt[0], Scalar(255,0,255), 1, CV_AA, 0);
 		}
-		imshow("interimdel", img1);
-		waitKey(250);
+//		imshow("interimdel", img1);
+//		waitKey(250);
 	}
 	namedWindow("Display window", WINDOW_AUTOSIZE);
 	imshow("Display window", img1);
 	waitKey(0);
 }
 
-/*
-vector<Point2f> Face:: Create_morphed_landMark(const fod &Normal, const fod &express, const fod &tobpr){
-	vector<Point2f> ret;
-	for(int i =0; i< tobpr.num_parts(); i++){
-		Point2f pont(tobpr.part(i).x() + (express.part(i).x()-Normal.part(i).x()),
-		tobpr.part(i).y() + (express.part(i).y()-Normal.part(i).y()));
-		ret.push_back(pont);
+void Face:: Create_morphed_landMark(){ //const fod &Normal, const fod &express, const fod &tobpr){
+
+	for(int i =0; i< Faces[2].shape2.size(); i++){
+		Point2f pont(Faces[2].shape2[i].x+(Faces[1].shape2[i].x-Faces[0].shape2[i].x),
+				Faces[2].shape2[i].y+(Faces[1].shape2[i].y-Faces[0].shape2[i].y) );
+//		tobpr.part(i).y() + (express.part(i).y()-Normal.part(i).y()));
+		Faces[3].shape2.push_back(pont);
+		circle(Faces[3].img,pont,3,(0,0,255),-1);
 	}
-//	for(int i =0; i<68; i++){
-	//	dlib::rgb_pixel a;
-	//   dlib::draw_solid_circle ( img,shape.part(i),2.0,a);	
-//		circle( this->img,ret[i],2.0, Scalar( 255, 255, 255 ),-1, 8 );
-//		cout<<ret[i].x<<' '<<ret[i].y<<endl;
-//	}
-//	namedWindow( "Display window", WINDOW_NORMAL );
- // imshow( "Display window",this-> img );
-//	waitKey(0);
-	return ret;
+	imshow("Correct?",Faces[3].img);
+	waitKey(0);
 }
 
-*/
 // ----------------------------------------------------------------------------------------
 
 int main(int argc, char** argv)
@@ -225,13 +235,14 @@ int main(int argc, char** argv)
         cout << "\nexception thrown!" << endl;
         cout << e.what() << endl;
     }
-//	 Faces[3].shape2 = Faces[3].Create_morphed_landMark(Faces[0].shape, Faces[1].shape, Faces[2].shape);
+	 Faces[3].Create_morphed_landMark();
+//	 Faces[3].shape2 = Faces[3].Create_morphed_landMaryk(Faces[0].shape, Faces[1].shape, Faces[2].shape);
 //	 cout<<"Landmarkpts created ....."<<endl;
 	
-	 Faces[0].DelaunayTriangulate(0);
+	 Faces[2].DelaunayTriangulate(0);
 //	 Faces[2]. DelaunayTriangulate(0);
 	 cout<<"src triangulated...."<<endl;
-	 
+		Faces[3].AffineTransform();	 
 //	 cv::imshow("output", Faces[2].img);
 //	 cv::waitKey(0);
 //	 Faces[3]. DelaunayTriangulate(1);
