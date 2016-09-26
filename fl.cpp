@@ -4,18 +4,23 @@
 #include <dlib/image_processing/render_face_detections.h>
 #include <dlib/image_processing.h>
 #include <dlib/gui_widgets.h>
-#include <dlib/image_io.h>
+#include<dlib/image_io.h>
+#include <dlib/opencv.h>
 #include <iostream>
 #include <cv.h>
 #include <highgui.h>
 typedef dlib::full_object_detection fod;
-#define eps 4
-
+#define eps 10
 //using namespace dlib;
 using namespace std;
 using namespace cv;
 
-vector<int>ind1(300),ind2(300);
+struct Triangle{
+	int id1,id2, id3;
+	Triangle(int a,int b, int c){
+		id1= a;id2= b; id3= c;}
+};
+vector<Triangle> Tlist;
 
 class Face{
 	public:
@@ -26,43 +31,25 @@ class Face{
 	Subdiv2D subdiv;
 //	vector<Point2f> Create_morphed_landMark(const fod &Normal, const fod &express, const fod &tobpr);
 	void DelaunayTriangulate(int fl);
-   void equalise(){
-		Point2f pont(shape.part(48).x(),shape.part(48).y());
-		shape2.push_back(pont);
-		Point2f pont1(shape.part(51).x(),shape.part(51).y());
-		shape2.push_back(pont1);
-		Point2f pont2(shape.part(54).x(),shape.part(54).y());
-		shape2.push_back(pont2);
-		Point2f pont3(shape.part(57).x(),shape.part(57).y());
-		shape2.push_back(pont3);
-
-	}
 
 	void equalize(int i =0){
 		if(i==0){
-		for(int i =0; i< 68; i++){
-			Point2f pont(shape.part(i).x(), shape.part(i).y());
-//			cout<<pont.x<<' '<<pont.y<<endl;
-			shape2.push_back(pont);
-		}}
-	   Point2f p1(5, 5);
-		shape2.push_back(p1);
-		Point2f p2(5,img.rows/2);
-		shape2.push_back(p2);
-		Point2f p3(5,img.rows-6);
-		shape2.push_back(p3);
-		Point2f p4(img.cols/2.0,5);
-		shape2.push_back(p4);
-		Point2f p5(img.cols-6,5);
-		shape2.push_back(p5);
-		Point2f p6( img.cols/2,img.rows-6);
-		shape2.push_back(p6);
-		Point2f p7( img.cols-6,img.rows-6);
-		shape2.push_back(p7);
-		Point2f p8( img.cols-6,img.rows/2);
-		shape2.push_back(p8);
+			for(int i =0; i< 68; i++){
+				Point2f pont(shape.part(i).x(), shape.part(i).y());
+				shape2.push_back(pont);
+			}
+		}
 		cout<<"equalised"<<endl;
 	}
+	int findindex(Point2f pt){
+		int ans = -1;
+		for(int i =0; i< shape2.size(); i++){
+			if(abs(shape2[i].x-pt.x)<eps && abs(shape2[i].y-pt.y)<eps)
+				return i;
+		}
+		return ans;
+	}
+
 //	void AffineTransform(Face &src,Face & dst);
    void calcTriangles(vector<Point2f> &srcTri, Face & src, int i){
       Vec6f s = src.Trilist[i];
@@ -73,57 +60,6 @@ class Face{
 //	void AffineTransform();
 }Faces[4];
 
-
-/*bool compare1(int i , int j ){
-	int a[3]={-1,-1,-1},b[3]={-1,-1,-1};  //= S[0].Trilist[i];
-	for(int i1 =0; i1< 6; i1+=2){
-		for(int j1 =0; j1< Faces[2].shape2.size(); j1++){
-			if(abs(Faces[2].Trilist[i][i1] - Faces[2].shape2[j1].x)<eps && abs(Faces[2].Trilist[i][i1+1] - Faces[2].shape2[j1].y)<eps){
-				a[i1/2] = j1;
-			}
-		}
-	}
-	
-	for(int i1 =0; i1< 6; i1+=2){
-		for(int j1 =0; j1< Faces[2].shape2.size(); j1++){
-			if(abs(Faces[2].Trilist[j][i1] - Faces[2].shape2[j1].x)<eps && abs(Faces[2].Trilist[j][i1+1] - Faces[2].shape2[j1].y)<eps){
-				b[i1/2] = j1;
-			}
-		}
-	}
-	sort(a,a+3);sort(b,b+3);
-	if(a[0] == -1 || b[0]==-1){cout<<"ERROR"<<endl;return 0;}
-	if(a[0]!= b[0])return a[0]<b[0];
-	if(a[1]!= b[1])return a[1]<b[1];
-	if(a[2]!= b[2])return a[2]<b[2];
-	return false;
-}
-bool compare2(int i, int j){
-  	int a[3]={-1,-1,-1},b[3]={-1,-1,-1};  //= S[0].Trilist[i];
-	for(int i1 =0; i1< 6; i1+=2){
-		for(int j1 =0; j1< Faces[3].shape2.size(); j1++){
-			if(abs(Faces[3].Trilist[i][i1] - Faces[3].shape2[j1].x)<eps && abs(Faces[3].Trilist[i][i1+1] - Faces[3].shape2[j1].y)<eps){
-				a[i1/2] = j1;
-			}
-		}
-	}
-	
-	for(int i1 =0; i1< 6; i1+=2){
-		for(int j1 =0; j1< Faces[3].shape2.size(); j1++){
-			if(abs(Faces[3].Trilist[j][i1] - Faces[3].shape2[j1].x)<eps && abs(Faces[3].Trilist[j][i1+1] - Faces[3].shape2[j1].y)<eps){
-				b[i1/2] = j1;
-			}
-
-		}
-	}
-	sort(a,a+3);sort(b,b+3);
-	if(a[0] == -1|| b[0]==-1){cout<<"ERROR"<<endl;return 0;}
-	if(a[0]!= b[0])return a[0]<b[0];
-	if(a[1]!= b[1])return a[1]<b[1];
-	if(a[2]!= b[2])return a[2]<b[2];
-	return false;
-}
-*/
 /*
 void Face::AffineTransform(){
 	Mat rot_mat( 2, 3, CV_32FC1 );
@@ -164,37 +100,39 @@ void Face::DelaunayTriangulate(int fl){
 	Rect rect(0, 0, img.size().width, img.size().height);
 	Subdiv2D subdiv(rect); 
 	for(int i =0; i< shape2.size(); i++){
-		if(rect.contains(shape2[i]))subdiv.insert(shape2[i]);
+		if(rect.contains(shape2[i]))
+			subdiv.insert(shape2[i]);
 	
 	}
 	this->subdiv= subdiv;
 	subdiv.getTriangleList(Trilist);
 	cout<<Trilist.size()<<endl;
-   for(int i =0; i< Trilist.size(); i++){
-		cout<<i<<endl;
-		if(!fl)ind1[i] = i;
-		else ind2[i] = i;
-	}
- //  if(!fl)sort(ind1.begin(), ind1.begin() + Trilist.size(),compare1);
-//	else sort(ind2.begin(), ind2.begin() + Trilist.size(),compare2);
 
 	cout<<"No of triangles are "<<Trilist.size()<<endl;
 	
 	Mat img1 = img.clone();
 
 	for(int i =0; i< Trilist.size(); i++){
-		Vec6f t = Trilist[i];
+		Vec6f t = Trilist[i];int a,b,c;
 		Point pt[3];
-		pt[0] = Point(cvRound(t[0]), cvRound(t[1]));
-		pt[1] = Point(cvRound(t[2]), cvRound(t[3]));
-		pt[2] = Point(cvRound(t[4]), cvRound(t[5]));
+		pt[0] = Point2f(cvRound(t[0]), cvRound(t[1]));
+		pt[1] = Point2f(cvRound(t[2]), cvRound(t[3]));
+		pt[2] = Point2f(cvRound(t[4]), cvRound(t[5]));
 		if(rect.contains(pt[0]) && rect.contains(pt[1]) && rect.contains(pt[2]))
 		{  
 		//	cout<<i<<endl;
+
+		a = findindex(pt[0]);
+		b = findindex(pt[1]);
+		c = findindex(pt[2]);Triangle now(a,b,c);
+		Tlist.push_back(now);
+//		cout<<a<<' '<<b<<' '<<c<<endl;
 			line(img1, pt[0], pt[1], Scalar(255,0,255), 1, CV_AA, 0);
 			line(img1, pt[1], pt[2], Scalar(255,0,255), 1, CV_AA, 0);
 			line(img1, pt[2], pt[0], Scalar(255,0,255), 1, CV_AA, 0);
 		}
+		imshow("interimdel", img1);
+		waitKey(250);
 	}
 	namedWindow("Display window", WINDOW_AUTOSIZE);
 	imshow("Display window", img1);
@@ -261,7 +199,7 @@ int main(int argc, char** argv)
 					return 0;
 				}
             std::vector<dlib::full_object_detection> shapes;
-	           for (unsigned long j = 0; j < dets.size(); ++j)
+	         for (unsigned long j = 0; j < dets.size(); ++j)
             {
 					dlib::full_object_detection shape = sp(img, dets[j]);
 					Faces[i-2].shape = shape;
@@ -272,23 +210,14 @@ int main(int argc, char** argv)
 						 
 						 dlib::rgb_pixel a;
 						 dlib::draw_solid_circle ( img,shape.part(i),2.0,a);
+//						 cv::Mat A= dlib::toMat (img);
+//						 imshow("Points are",A);
+//						 waitKey(500);
 					 }
-
+	
                 shapes.push_back(shape);
             }
-
-            // Now let's view our face poses on the screen.
-				win.clear_overlay();
-				win.set_image(img);
-				win.add_overlay(render_face_detections(shapes));
-            
-				dlib::array<dlib::array2d<dlib::rgb_pixel> > face_chips;
-				dlib::extract_image_chips(img, get_face_chip_details(shapes), face_chips);
-			   win_faces.set_image(tile_images(face_chips));
-
-            cout << "Hit enter to process the next image..." << endl;
-            
-				cin.get();
+				Faces[i-2].equalize();
         }
     }
     catch (exception& e)
@@ -298,18 +227,14 @@ int main(int argc, char** argv)
     }
 //	 Faces[3].shape2 = Faces[3].Create_morphed_landMark(Faces[0].shape, Faces[1].shape, Faces[2].shape);
 //	 cout<<"Landmarkpts created ....."<<endl;
-	 Faces[0].equalize();
-	 Faces[1].equalize();
-	 Faces[3].equalize(1);
-	 Faces[2].equalize();
 	
 	 Faces[0].DelaunayTriangulate(0);
-	 Faces[2]. DelaunayTriangulate(0);
+//	 Faces[2]. DelaunayTriangulate(0);
 	 cout<<"src triangulated...."<<endl;
 	 
-	 cv::imshow("output", Faces[2].img);
-	 cv::waitKey(0);
-	 Faces[3]. DelaunayTriangulate(1);
+//	 cv::imshow("output", Faces[2].img);
+//	 cv::waitKey(0);
+//	 Faces[3]. DelaunayTriangulate(1);
 	 cout<<"dest triangulated..."<<endl;
    
 //	 for(int i =0; i< 150; i++){
