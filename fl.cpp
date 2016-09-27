@@ -108,7 +108,9 @@ void Face::AffineTransform(){
 		//waitKey(100);
 		}
 
-	}	
+	}
+	GaussianBlur( img, img, Size( 5, 5 ), 0, 0 );
+	imwrite("MorphedImage.png",img); 
 	namedWindow( "Display window", WINDOW_AUTOSIZE );
 	imshow( "Display window",img );
    waitKey(0);
@@ -126,7 +128,7 @@ void Face::DelaunayTriangulate(int fl){
 	subdiv.getTriangleList(Trilist);
 	cout<<Trilist.size()<<endl;
 
-	cout<<"No of triangles are "<<Trilist.size()<<endl;
+//	cout<<"No of triangles are "<<Trilist.size()<<endl;
 	
 	Mat img1 = img.clone();
 
@@ -144,30 +146,30 @@ void Face::DelaunayTriangulate(int fl){
 		b = findindex(pt[1]);
 		c = findindex(pt[2]);Triangle now(a,b,c);
 		Tlist.push_back(now);
-		cout<<a<<' '<<b<<' '<<c<<endl;
-			line(img1, pt[0], pt[1], Scalar(255,0,255), 1, CV_AA, 0);
-			line(img1, pt[1], pt[2], Scalar(255,0,255), 1, CV_AA, 0);
-			line(img1, pt[2], pt[0], Scalar(255,0,255), 1, CV_AA, 0);
+//		cout<<a<<' '<<b<<' '<<c<<endl;
+//			line(img1, pt[0], pt[1], Scalar(255,0,255), 1, CV_AA, 0);
+//			line(img1, pt[1], pt[2], Scalar(255,0,255), 1, CV_AA, 0);
+//			line(img1, pt[2], pt[0], Scalar(255,0,255), 1, CV_AA, 0);
 		}
 //		imshow("interimdel", img1);
 //		waitKey(250);
 	}
-	namedWindow("Display window", WINDOW_AUTOSIZE);
-	imshow("Display window", img1);
-	waitKey(0);
+//	namedWindow("Display window", WINDOW_AUTOSIZE);
+//	imshow("Display window", img1);
+//	waitKey(0);
 }
 
 void Face:: Create_morphed_landMark(){ //const fod &Normal, const fod &express, const fod &tobpr){
 
 	for(int i =0; i< Faces[2].shape2.size(); i++){
 		Point2f pont(Faces[2].shape2[i].x+(Faces[1].shape2[i].x-Faces[0].shape2[i].x),
-				Faces[2].shape2[i].y+(Faces[1].shape2[i].y-Faces[0].shape2[i].y) );
+		Faces[2].shape2[i].y+(Faces[1].shape2[i].y-Faces[0].shape2[i].y) );
 //		tobpr.part(i).y() + (express.part(i).y()-Normal.part(i).y()));
 		Faces[3].shape2.push_back(pont);
-		circle(Faces[3].img,pont,3,(0,0,255),-1);
+//		circle(Faces[3].img,pont,3,(0,0,255),-1);
 	}
-	imshow("Correct?",Faces[3].img);
-	waitKey(0);
+//	imshow("Correct?",Faces[3].img);
+//	waitKey(0);
 }
 
 // ----------------------------------------------------------------------------------------
