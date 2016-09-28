@@ -178,14 +178,7 @@ int main(int argc, char** argv)
 {  
     try
     {
-        if (argc == 1)
-        {
-            cout << "Call this program like this:" << endl;
-            cout << "./face_landmark_detection_ex shape_predictor_68_face_landmarks.dat faces/*.jpg" << endl;
-            cout << "\nYou can get the shape_predictor_68_face_landmarks.dat file from:\n";
-            cout << "http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2" << endl;
-            return 0;
-        }
+       
 		  
 		  Faces[0].img = cv::imread(argv[2], CV_LOAD_IMAGE_COLOR);                                 // Take in all the images, neutral1
 		  Faces[1].img = cv::imread(argv[3],CV_LOAD_IMAGE_COLOR);											// Smile1
