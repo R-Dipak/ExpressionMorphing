@@ -65,16 +65,16 @@ void Face::AffineTransform(){
 	Mat warp_mat( 2, 3, CV_32FC1 );
 	for(int i =0; i< Tlist.size(); i++){
 	   vector<Point2f> srcTri,dstTri;int a = Tlist[i].id1, b = Tlist[i].id2, c=  Tlist[i].id3;
-		Point2f stri[3], dtri[3];
+//		Point2f stri[3], dtri[3];
 		srcTri.push_back(Faces[2].shape2[a]);
 		srcTri.push_back(Faces[2].shape2[b]);
 		srcTri.push_back(Faces[2].shape2[c]);
 		dstTri.push_back(Faces[3].shape2[a]);
 		dstTri.push_back(Faces[3].shape2[b]);
 		dstTri.push_back(Faces[3].shape2[c]);
-		stri[0] = srcTri[0];dtri[0 ] =dstTri[0];
-		stri[1] = srcTri[1];dtri[1] = dstTri[1];
-		stri[2] = srcTri[2];dtri[2] = dstTri[2];
+//		stri[0] = srcTri[0];dtri[0 ] =dstTri[0];
+//		stri[1] = srcTri[1];dtri[1] = dstTri[1];
+//		stri[2] = srcTri[2];dtri[2] = dstTri[2];
 
 		{
 		Rect srcrct = boundingRect( (srcTri)	),dstrct = boundingRect ( (dstTri)) ;	
@@ -85,17 +85,17 @@ void Face::AffineTransform(){
 		dstTri[1].x-=dstrct.x;dstTri[1].y-=dstrct.y;
 		dstTri[2].x-=dstrct.x;dstTri[2].y-=dstrct.y;
 
-      stri[0].x-=srcrct.x;stri[0].y-=srcrct.y;
+/*      stri[0].x-=srcrct.x;stri[0].y-=srcrct.y;
 		stri[1].x-=srcrct.x;stri[1].y-=srcrct.y;
 		stri[2].x-=srcrct.x;stri[2].y-=srcrct.y;
 		dtri[0].x-=dstrct.x;dtri[0].y-=dstrct.y;
 		dtri[1].x-=dstrct.x;dtri[1].y-=dstrct.y;
 		dtri[2].x-=dstrct.x;dtri[2].y-=dstrct.y;
-
+*/
 		Mat imga = Faces[2].img(srcrct).clone(),imgb = Faces[3].img(dstrct).clone();
 //		imshow("b4",imga);
 //		waitKey(0);
-		warp_mat = getAffineTransform( stri,dtri );
+		warp_mat = getAffineTransform( srcTri,dstTri );
 
 		warpAffine( imga, imgb, warp_mat, imgb.size(), BORDER_REFLECT_101);
 //		imshow("ThisTriangle",imgb);
@@ -109,10 +109,11 @@ void Face::AffineTransform(){
 		}
 
 	}
-	GaussianBlur( img, img, Size( 5, 5 ), 0, 0 );
+//	GaussianBlur( img, img, Size( 5, 5 ), 0, 0 );
 	imwrite("MorphedImage.png",img); 
 	namedWindow( "Display window", WINDOW_AUTOSIZE );
 	imshow( "Display window",img );
+	imshow("Original", Faces[2].img);
    waitKey(0);
 }
 
@@ -178,7 +179,13 @@ int main(int argc, char** argv)
 {  
     try
     {
-       
+        if (argc == 1)
+        {
+            cout << "Call this program like this:" << endl;
+            cout << "./face_landmark_detection_ex shape_predictor_68_face_landmarks.dat faces/*.jpg" << endl;
+            cout << "NeutralFace1 ,ExpressionFace1, NeutralFace2 "<<endl;
+            return 0;
+        }
 		  
 		  Faces[0].img = cv::imread(argv[2], CV_LOAD_IMAGE_COLOR);                                 // Take in all the images, neutral1
 		  Faces[1].img = cv::imread(argv[3],CV_LOAD_IMAGE_COLOR);											// Smile1

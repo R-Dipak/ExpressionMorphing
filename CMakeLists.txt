@@ -32,7 +32,7 @@ ENDMACRO()
 
 
 #here we apply our macros 
-add_example(fl)
+add_example(source)
 
 #find_package( OpenCV REQUIRED )
 #add_executable( DisplayImage DisplayImage.cpp )
