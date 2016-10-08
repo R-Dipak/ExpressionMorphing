@@ -24,6 +24,7 @@ vector<Triangle> Tlist;
 
 class Face{
 	public:
+		int length;
 	Mat img;
 	vector<Vec6f> Trilist;
 	dlib::full_object_detection shape;        // Landmark points
@@ -39,7 +40,7 @@ class Face{
 				shape2.push_back(pont);
 			}
 		}
-		cout<<"equalised"<<endl;
+		//cout<<"equalised"<<endl;
 	}
 	int findindex(Point2f pt){
 		int ans = -1;
@@ -63,57 +64,49 @@ class Face{
 void Face::AffineTransform(){
 	Mat rot_mat( 2, 3, CV_32FC1 );
 	Mat warp_mat( 2, 3, CV_32FC1 );
+	Mat Totkernel = Mat(img.rows,img.cols,CV_8UC1,Scalar(255));
+	
 	for(int i =0; i< Tlist.size(); i++){
 	   vector<Point2f> srcTri,dstTri;int a = Tlist[i].id1, b = Tlist[i].id2, c=  Tlist[i].id3;
-//		Point2f stri[3], dtri[3];
 		srcTri.push_back(Faces[2].shape2[a]);
 		srcTri.push_back(Faces[2].shape2[b]);
 		srcTri.push_back(Faces[2].shape2[c]);
 		dstTri.push_back(Faces[3].shape2[a]);
 		dstTri.push_back(Faces[3].shape2[b]);
 		dstTri.push_back(Faces[3].shape2[c]);
-//		stri[0] = srcTri[0];dtri[0 ] =dstTri[0];
-//		stri[1] = srcTri[1];dtri[1] = dstTri[1];
-//		stri[2] = srcTri[2];dtri[2] = dstTri[2];
-
 		{
 		Rect srcrct = boundingRect( (srcTri)	),dstrct = boundingRect ( (dstTri)) ;	
-      srcTri[0].x-=srcrct.x;srcTri[0].y-=srcrct.y;
+     	Point dstr1[3] = {dstTri[0],dstTri[1], dstTri[2]}; 
+		fillConvexPoly(Totkernel,dstr1,3,Scalar(0));
+		
+		srcTri[0].x-=srcrct.x;srcTri[0].y-=srcrct.y;
 		srcTri[1].x-=srcrct.x;srcTri[1].y-=srcrct.y;
 		srcTri[2].x-=srcrct.x;srcTri[2].y-=srcrct.y;
 		dstTri[0].x-=dstrct.x;dstTri[0].y-=dstrct.y;
 		dstTri[1].x-=dstrct.x;dstTri[1].y-=dstrct.y;
 		dstTri[2].x-=dstrct.x;dstTri[2].y-=dstrct.y;
-
-/*      stri[0].x-=srcrct.x;stri[0].y-=srcrct.y;
-		stri[1].x-=srcrct.x;stri[1].y-=srcrct.y;
-		stri[2].x-=srcrct.x;stri[2].y-=srcrct.y;
-		dtri[0].x-=dstrct.x;dtri[0].y-=dstrct.y;
-		dtri[1].x-=dstrct.x;dtri[1].y-=dstrct.y;
-		dtri[2].x-=dstrct.x;dtri[2].y-=dstrct.y;
-*/
 		Mat imga = Faces[2].img(srcrct).clone(),imgb = Faces[3].img(dstrct).clone();
-//		imshow("b4",imga);
-//		waitKey(0);
 		warp_mat = getAffineTransform( srcTri,dstTri );
 
-		warpAffine( imga, imgb, warp_mat, imgb.size(), BORDER_REFLECT_101);
-//		imshow("ThisTriangle",imgb);
-//		waitKey(200);
+		warpAffine( imga, imgb, warp_mat, imgb.size(),BORDER_REFLECT_101);
 		Mat kernel = Mat::zeros(imgb.rows,imgb.cols, CV_8UC1);
 		Point dstr[3] = {dstTri[0], dstTri[1], dstTri[2]};
 		fillConvexPoly(kernel,dstr,3,Scalar(255));
 		add( Faces[3].img(dstrct), imgb,Faces[3].img(dstrct), kernel);
-		//imshow("ThisTriangle?",imgb);
-		//waitKey(100);
+//		imshow("ThisTriangle?",Faces[3].img);
+//		waitKey(200);
 		}
-
 	}
-//	GaussianBlur( img, img, Size( 5, 5 ), 0, 0 );
+/*Taking care of overadded edges*/
+	medianBlur(Faces[3].img, Faces[3].img,3);
+	add(Faces[2].img, Faces[3].img, Faces[3].img, Totkernel);
+	imshow("Kernel is", Totkernel);
+	waitKey(0);
 	imwrite("MorphedImage.png",img); 
+	imshow("Original",Faces[2].img);
+	waitKey(0);
 	namedWindow( "Display window", WINDOW_AUTOSIZE );
 	imshow( "Display window",img );
-	imshow("Original", Faces[2].img);
    waitKey(0);
 }
 
@@ -127,7 +120,7 @@ void Face::DelaunayTriangulate(int fl){
 	}
 	this->subdiv= subdiv;
 	subdiv.getTriangleList(Trilist);
-	cout<<Trilist.size()<<endl;
+	//cout<<Trilist.size()<<endl;
 
 //	cout<<"No of triangles are "<<Trilist.size()<<endl;
 	
@@ -161,10 +154,15 @@ void Face::DelaunayTriangulate(int fl){
 }
 
 void Face:: Create_morphed_landMark(){ //const fod &Normal, const fod &express, const fod &tobpr){
-
+	double factor = Faces[2].length/(double)Faces[0].length;
 	for(int i =0; i< Faces[2].shape2.size(); i++){
-		Point2f pont(Faces[2].shape2[i].x+(Faces[1].shape2[i].x-Faces[0].shape2[i].x),
-		Faces[2].shape2[i].y+(Faces[1].shape2[i].y-Faces[0].shape2[i].y) );
+		Point2f pont;
+		if(i<28){
+				 pont = Point2f(Faces[2].shape2[i].x,Faces[2].shape2[i].y );
+		}
+		else
+		 pont = Point2f(Faces[2].shape2[i].x+factor*(Faces[1].shape2[i].x-Faces[0].shape2[i].x),
+		Faces[2].shape2[i].y+factor*(Faces[1].shape2[i].y-Faces[0].shape2[i].y) );
 //		tobpr.part(i).y() + (express.part(i).y()-Normal.part(i).y()));
 		Faces[3].shape2.push_back(pont);
 //		circle(Faces[3].img,pont,3,(0,0,255),-1);
@@ -218,18 +216,20 @@ int main(int argc, char** argv)
      //               cout << "number of parts: "<< shape.num_parts() << endl;
        //             cout << "pixel position of first part:  " << shape.part(1)<<endl;//.x()<<' '<<shape.part(0).y() << endl;
         //            cout << "pixel position of second part: " << shape.part(2) << endl;
-					 for(int i =0; i<68; i++){
+	/*				 for(int i =0; i<28; i++){
 						 
 						 dlib::rgb_pixel a;
 						 dlib::draw_solid_circle ( img,shape.part(i),2.0,a);
-//						 cv::Mat A= dlib::toMat (img);
+						 cv::Mat A= dlib::toMat (img);
+//						 cout<<i<<endl;
 //						 imshow("Points are",A);
 //						 waitKey(500);
 					 }
-	
+	*/
                 shapes.push_back(shape);
             }
 				Faces[i-2].equalize();
+				Faces[i-2].length = dets[0].height();
         }
     }
     catch (exception& e)
@@ -243,12 +243,13 @@ int main(int argc, char** argv)
 	
 	 Faces[2].DelaunayTriangulate(0);
 //	 Faces[2]. DelaunayTriangulate(0);
-	 cout<<"src triangulated...."<<endl;
+//	 cout<<"src triangulated...."<<endl;
+
 		Faces[3].AffineTransform();	 
 //	 cv::imshow("output", Faces[2].img);
 //	 cv::waitKey(0);
 //	 Faces[3]. DelaunayTriangulate(1);
-	 cout<<"dest triangulated..."<<endl;
+	// cout<<"dest triangulated..."<<endl;
    
 //	 for(int i =0; i< 150; i++){
 //		 cout<<ind1[i]<<' ';
