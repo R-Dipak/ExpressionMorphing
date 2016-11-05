@@ -16,7 +16,7 @@ typedef dlib::full_object_detection fod;
 using namespace std;
 using namespace cv;
 
-VideoWriter face0,face1,face2;                                        // Open the output
+//VideoWriter face0,face1,face2;                                        // Open the output
 
 struct Triangle{
 	int id1,id2, id3;
@@ -35,7 +35,7 @@ class Face{
 	void New(){
 		Trilist.clear();
 		shape2.clear();
-		Tlist.clear();
+//		Tlist.clear();
 	}
 	Subdiv2D subdiv;
 	void Create_morphed_landMark();//const fod &Normal, const fod &express, const fod &tobpr);
@@ -199,14 +199,14 @@ void Face:: Create_morphed_landMark(){ //const fod &Normal, const fod &express, 
 		Faces[2].shape2[i].y+factor1*(Faces[1].shape2[i].y-Faces[0].shape2[i].y) );
 //		tobpr.part(i).y() + (express.part(i).y()-Normal.part(i).y()));
 		Faces[3].shape2.push_back(pont);
-		circle(img0,Faces[0].shape2[i],2,(0,0,255),-1);		
+//		circle(img0,Faces[0].shape2[i],2,(0,0,255),-1);		
+//		circle(img1,Faces[1].shape2[i],2,(0,0,255),-1);
 		circle(img1,Faces[1].shape2[i],2,(0,0,255),-1);
-		circle(img2,Faces[2].shape2[i],2,(0,0,255),-1);
 	}
-	face0<<img0;
-	face1<<img1;
-	face2<<img2;
-//  imshow("Correct?",Faces[3].img);
+	//face0<<img0;
+//	face1<<img1;
+//	face2<<img2;
+//  imshow("Correct?",img1);
 //	waitKey(0);
 }
 
@@ -219,41 +219,54 @@ int main(int argc, char** argv)
 	char *inputvid = new char[60], *opvid = new char[60];
 	if (argc == 1)
 	{
-		strcpy(inputvid,"Faces/drivfk.webm");
+		strcpy(inputvid,"Faces/drifar.webm");
 		strcpy(opvid, "Faces/inp1.webm");
 	}
+	if(argc == 2){
+		strcpy(opvid, argv[1]);
+		cout<<"Enter The expression to be induced in the given Face"<<endl;
+		cout<<" 1 - Smile \n"
+			 <<" 2 - CloseEye\n"
+			 <<" 3 - Kiss"<<endl;
+//			 <<" 4 - OneSidedsmile"<<endl;
+		int ch;
+		cin>>ch;
+		switch(ch){
+			case 1: strcpy(inputvid, "Faces/drifar.webm");break;
+			case 2: strcpy(inputvid, "Faces/fareyeclose.webm");break;
+			case 3: strcpy(inputvid, "Faces/kiss.webm");break;
+		}
+	}
+
+
 	else{
 		strcpy(inputvid, argv[1]);
 		strcpy( opvid, argv[2]);
 	}
-
-	char *dat = new char[80]; strcpy(dat, "shape_predictor_68_face_landmarks.dat");
-//	cap>>Faces[0].img; 
-	VideoCapture dri(inputvid), inp(opvid);
-	dri>>Faces[0].img;
-
-
-//This initialises shape predictor sp,detector
+// Initialising Face Landmark detector as       sp
+	char *dat = new char[80]; 
+	strcpy(dat, "shape_predictor_68_face_landmarks.dat");
 	dlib::frontal_face_detector detector = dlib::get_frontal_face_detector();
 	dlib::shape_predictor sp;
-	dlib::deserialize(dat) >> sp;
+ 	dlib::deserialize(dat) >> sp;
+//------------------------------------------------
+
+
+	VideoCapture dri(inputvid), inp(opvid),dri2(inputvid);
+	dri>>Faces[0].img;
 	{  
-	//	dlib::array2d<dlib::rgb_pixel> img;                                
-	dlib::cv_image<dlib::bgr_pixel> img(Faces[0].img);
-	vector<dlib::rectangle> dets = detector(img);                  // dets bounds the faces with rectangles
+		dlib::cv_image<dlib::bgr_pixel> img(Faces[0].img);
+		vector<dlib::rectangle> dets = detector(img);                  // dets bounds the faces with rectangles
 
-	if(dets.size()!= 1){
-		cout<<"Error : No of faces detected in driver != 1 !"<<endl;
-		return 0;
-	}
-//	std::vector<dlib::full_object_detection> shapes;
-	dlib::full_object_detection shape = sp(img, dets[0]);
-	Faces[0].shape = shape;
-//	shapes.push_back(shape);
-
-	Faces[0].equalize();
-	Faces[0].length = dets[0].height();
-	Faces[0].breadth= dets[0].width();
+		if(dets.size()!= 1){
+			cout<<"Error : No of faces detected in driver != 1 !"<<endl;
+			return 0;
+		}
+		dlib::full_object_detection shape = sp(img, dets[0]);
+		Faces[0].shape = shape;
+		Faces[0].equalize();
+		Faces[0].length = dets[0].height();
+		Faces[0].breadth= dets[0].width();
 	}
 	int cnt= 0;
 	Size S = Size((int) inp.get(CV_CAP_PROP_FRAME_WIDTH),    // Acquire input size
@@ -261,137 +274,106 @@ int main(int argc, char** argv)
 	VideoWriter outputVideo;                                        // Open the output
 	outputVideo.open("output.avi", static_cast<int>(inp.get(CV_CAP_PROP_FOURCC)),30, S, true);
 
-face0.open("face0.avi", static_cast<int>(inp.get(CV_CAP_PROP_FOURCC)),30, S, true);
-face1.open("face1.avi", static_cast<int>(inp.get(CV_CAP_PROP_FOURCC)),30, S, true);
-face2.open("face2.avi", static_cast<int>(inp.get(CV_CAP_PROP_FOURCC)),30, S, true);
-
-//	cout<<static_cast<int>(inp.get(CV_CAP_PROP_FOURCC))<<' '<< inp.get(CV_CAP_PROP_FPS)<<endl;
 	if (!outputVideo.isOpened())
 	{
 		cout  << "Could not open the output video for write: " <<  endl;
 		return -1;
 	}
-	
-//	inp>>Faces[2].img;	
-	//i	VideoWriter outputVideo;
-	while(1){
-//		cout<<"here "<<cnt<<endl;
-//		cout<<cnt++<<endl;
-//		if(cnt==300) break;
+	//Taking the Target in the Face ---------------------------------------------------------------------------------------------
+	{
 		inp>>Faces[2].img;
-//		Faces[2].img =cv::imread(argv[4], CV_LOAD_IMAGE_COLOR); 
-		dri>>Faces[1].img;
+		dlib::cv_image<dlib::bgr_pixel> img1(Faces[2].img);
+		vector<dlib::rectangle> dets1 = detector(img1);
+		dlib::full_object_detection shape = sp(img1,dets1[0]);
+		Faces[2].shape = shape;
+		Faces[2].equalize();
+		Faces[2].length = dets1[0].height();
+		Faces[2].breadth = dets1[0].width();
+		Faces[2].DelaunayTriangulate(0);
 
+	}
+	// --------------------------------------------------------------------------------------------------------------------------
+
+	Mat temp;
+	// Performing error correction ahead in time      ---------------------------------------------------------------------------
+	dri2>>temp;
+	float xcoord1[2000][68],xcoord[2000][68],ycoord1[2000][68],ycoord[2000][68];
+	int top = 0,len[2000],bre[2000];
+	while(1){
+		dri2>>temp;
+		if(temp.empty())break;
+		dlib::cv_image<dlib::bgr_pixel> img1(temp);
+		vector<dlib::rectangle> dets1 = detector(img1);
+		dlib::full_object_detection shape = sp(img1,dets1[0]);
+		len[top] = dets1[0].height(); 
+		bre[top] = dets1[0].width();
+		for(int i =0; i< 68; i++){
+			//Point2f pont(shape.part(i).x(), shape.part(i).y());
+			xcoord1[top][i] = shape.part(i).x();
+			ycoord1[top][i] = shape.part(i).y();
+		}
+		top++;
+	}
+	for(int i =0; i< 68; i++){
+		for(int j = 0; j< 4; j++){
+			xcoord[j][i] = xcoord1[j][i];			
+			ycoord[j][i] = ycoord1[j][i];
+		}
+		for(int j = 0; j< 4; j++){
+			xcoord[top-j-1][i] = xcoord1[top-j-1][i];			
+			ycoord[top-j-1][i] = ycoord1[top-j-1][i];
+		}
+		for(int j = 4; j< top-4; j++){
+			vector<float> yc,xc;
+			for(int k =-4; k<= 4; k++){
+				xc.push_back(xcoord1[j+k][i]);
+				yc.push_back(ycoord1[j+k][i]);
+			}
+			sort(xc.begin(), xc.end());sort(yc.begin(),yc.end());
+			xcoord[j][i] = xc[4];
+			ycoord[j][i] = yc[4];
+		}
+	}
+	// -----------------------------------------------------------------------------------------------------------------------
+	for(int i= 0;i < top; i++){
+		dri>>Faces[1].img;
 		if(Faces[2].img.empty() || Faces[1].img.empty())
 			break;
 		Totkernel = Mat(Faces[2].img.rows,Faces[2].img.cols,CV_8UC1,Scalar(255));
-
 		Faces[3].img = Mat::zeros(Faces[2].img.rows, Faces[2].img.cols, CV_8UC3); 	
 		Faces[1].New();
-		dlib::cv_image<dlib::bgr_pixel> img1(Faces[1].img),img2(Faces[2].img);
-		vector<dlib::rectangle> dets1 = detector(img1),dets2 = detector(img2);
-		if(dets1.size()!= 1){
-			cout<<"Error : No of faces in driver != 1 !"<<endl;
-			return 0;
+//		dlib::cv_image<dlib::bgr_pixel> img1(Faces[1].img);//img2(Faces[2].img);
+//		vector<dlib::rectangle> dets1 = detector(img1);//dets2 = detector(img2);
+//		if(dets1.size()!= 1){
+//			cout<<"Error : No of faces in driver != 1 !"<<endl;
+//			return 0;
+//		}
+//		dlib::full_object_detection shape = sp(img1,dets1[0]);
+//		Faces[1].shape = shape;
+//		Faces[1].equalize();
+
+		for(int j =0; j< 68; j++){
+			Point2f pont( xcoord[i][j], ycoord[i][j]);
+			Faces[1].shape2.push_back(pont);
 		}
-		dlib::full_object_detection shape = sp(img1,dets1[0]);
-		Faces[1].shape = shape;
-		Faces[1].equalize();
-		Faces[1].length = dets1[0].height();
-		Faces[1].breadth = dets1[0].width();
-		for(int i =0; i< dets2.size(); i++){
-			Faces[2].New();Faces[3].New();
-			dlib::full_object_detection shape = sp(img2,dets2[i]);
-			Faces[2].shape = shape;
-			Faces[2].equalize();
-			Faces[2].length = dets2[i].height();
-			Faces[2].breadth = dets2[i].width();
+
+		Faces[1].length = len[i];
+		Faces[1].breadth = bre[i];
+		Faces[3].New();
+//		for(int i =0; i< dets2.size(); i++){
+//			Faces[2].New();Faces[3].New();
+//			dlib::full_object_detection shape = sp(img2,dets2[i]);
+//			Faces[2].shape = shape;
+//			Faces[2].equalize();
+//			Faces[2].length = dets2[i].height();
+//			Faces[2].breadth = dets2[i].width();
 			Faces[3].Create_morphed_landMark();
-			Faces[2].DelaunayTriangulate(0);
+//			Faces[2].DelaunayTriangulate(0);
 			Faces[3].AffineTransform();
-		}
-//		cout<<"here 2 "<<cnt<<endl;
+//		}
 		add(Faces[2].img, Faces[3].img, Faces[3].img, Totkernel);
 		medianBlur(Faces[3].img, Faces[3].img,3);
-		//	imshow("Kernel is", Totkernel);
-		//	waitKey(0);
-		//	imwrite("MorphedImage.png",img); 
-//		imshow("Original",Faces[2].img);
-//		waitKey(0);
-		//	namedWindow( "Display window", WINDOW_AUTOSIZE );
-//		imshow( "Display window",Faces[3].img );
-//		waitKey(10);
-//		cv::imshow("op",Faces[3].img);
-//		waitKey(10);
-//		cout<<"cnt "<<cnt++<<endl;
 		outputVideo<<Faces[3].img;
-	}/*
-	cout<<"okay"<<endl;
-	VideoCapture cap("output.avi");
-	
-	Mat src;
-	while(1){
-		cout<<"okay"<<endl;
-		cap>>src;
-		
-		if(src.empty())break;
-		imshow("output", src);
-		waitKey(10);
-	}*/
-}
-				
-//	cout<<"FineHere"<<endl;
-//	cout<<"Fine"<<endl;
-/*	while(1){
-		//cap.read(Faces[2].img);
-		cap>>Faces[1].img;
-		imshow("drive", Faces[1].img);
-		Faces[1].New();Faces[2].New(); Faces[3].New();Tlist.clear();
-//		imshow("Readin", Faces[2].img);waitKey(0);
-		Faces[3].img = Mat::zeros(Faces[2].img.rows, Faces[2].img.cols, CV_8UC3); 	
-
-	{
-		dlib::cv_image<dlib::bgr_pixel> img(Faces[1].img);
-		std::vector<dlib::rectangle> dets = detector(img);                  // dets bounds the faces with rectangles
-		std::vector<dlib::full_object_detection> shapes;
-		dlib::full_object_detection shape = sp(img, dets[0]);
-		Faces[1].shape = shape;
-		shapes.push_back(shape);
-		Faces[1].equalize();
-		Faces[1].length = dets[0].height();
 	}
-//		imshow("Reini",Faces[3].img);waitKey(0);
-		//	dlib::array2d<dlib::rgb_pixel> img;
-//	cout<<"ok"<<endl;
-		int key = cvWaitKey(10); if (char(key) == 27){
-						break;      //If you hit ESC key loop will break.
-								}
-		dlib::cv_image<dlib::bgr_pixel> img(Faces[2].img);
-
-		std::vector<dlib::rectangle> dets = detector(img);                  // dets bounds the faces with rectangles
-
-		std::vector<dlib::full_object_detection> shapes;
-		if(dets.size()<1)continue;	
-		dlib::full_object_detection shape = sp(img, dets[0]);
-		Faces[2].shape = shape;
-	//	shapes.push_back(shape);
-		Faces[2].equalize();
-		Faces[2].length = dets[0].height();
-
-		Faces[3].Create_morphed_landMark();
-		//	 Faces[3].shape2 = Faces[3].Create_morphed_landMaryk(Faces[0].shape, Faces[1].shape, Faces[2].shape);
-		//	 cout<<"Landmarkpts created ....."<<endl;
-
-		Faces[2].DelaunayTriangulate(0);
-		Faces[3].AffineTransform();
-	}
-	
 }
-//	 cv::imshow("output", Faces[2].img);
-//	 cv::waitKey(0);
-//	 Faces[3]. DelaunayTriangulate(1);
-// cout<<"dest triangulated..."<<endl;
-
-
 // ----------------------------------------------------------------------------------------
-*/
