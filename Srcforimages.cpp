@@ -184,7 +184,7 @@ int main(int argc, char** argv)
 	if (argc == 1)
 	{
 		cout << "Call this program like this:" << endl;
-		cout << "./Srcforimages ../shape_predictor_68_face_landmarks.dat ";
+		cout << "./Srcforimages shape_predictor_68_face_landmarks.dat ";
 		cout << "NeutralFace1 ExpressionFace1 NeutralFace2 "<<endl;
 		return 0;
 	}
