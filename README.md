@@ -25,5 +25,5 @@ $ cmake ..
 
 $ make
 
-$ ./Srcforimages shape_predictor_68_face_landmarks.dat ../IO/Imagesfrdemo/normal6.jpg ../IO/Imagesfrdemo/smile6.jpg ../Imagesfrdemo/single.jpeg
+$ ./Srcforimages shape_predictor_68_face_landmarks.dat ../IO/Imagesfrdemo/normal6.jpg ../IO/Imagesfrdemo/smile6.jpg ../IO/Imagesfrdemo/single.jpeg
 
