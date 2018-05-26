@@ -16,28 +16,33 @@ typedef dlib::full_object_detection fod;
 using namespace std;
 using namespace cv;
 
-struct Triangle{
+struct Triangle{						// Class for holding delaunay triangulated feature indices
 	int id1,id2, id3;
 	Triangle(int a,int b, int c){
-		id1= a;id2= b; id3= c;}
+		id1= a;id2= b; id3= c;
+	}
 };
 vector<Triangle> Tlist;
 
 class Face{
 	public:
-		int length;
-	Mat img;
-	vector<Vec6f> Trilist;
-	dlib::full_object_detection shape;        // Landmark points
+	int length;
+	Mat img;						// Input image for the Face
+	vector<Vec6f> Trilist; 					// Delauney triangles of the feature points
+	dlib::full_object_detection shape;        		// The 68 Landmark points of the Face
 	vector<Point2f> shape2;
 	void New(){
 		Trilist.clear();
 		shape2.clear();
 	}
 	Subdiv2D subdiv;
-	void Create_morphed_landMark();//const fod &Normal, const fod &express, const fod &tobpr);
-	void DelaunayTriangulate(int fl);
-
+	void Create_morphed_landMark();				// Calculates the transform of feature points in the target face
+								// for inducing the expression
+	
+	void DelaunayTriangulate(int fl);			// Triangulate the features
+	
+	void AffineTransform();					// affine transforms all the individual triangles
+	
 	void equalize(int i =0){
 		if(i==0){
 			for(int i =0; i< 68; i++){
@@ -55,18 +60,17 @@ class Face{
 		return ans;
 	}
 
-   void calcTriangles(vector<Point2f> &srcTri, Face & src, int i){
-      Vec6f s = src.Trilist[i];
+   	void calcTriangles(vector<Point2f> &srcTri, Face & src, int i){
+      		Vec6f s = src.Trilist[i];
 		srcTri.push_back( Point(cvRound(s[0]), cvRound(s[1])));
 		srcTri.push_back ( Point(cvRound(s[2]), cvRound(s[3])));
 		srcTri.push_back(Point(cvRound(s[4]), cvRound(s[5])));
 	}
-	void AffineTransform();
+	
 
 }Faces[4];
 
-void Face::AffineTransform(){
-//	imshow("B4 affine",Faces[3].img);waitKey(0);
+void Face::AffineTransform(){					// affine transforms all the individual triangles
 	Mat rot_mat( 2, 3, CV_32FC1 );
 	Mat warp_mat( 2, 3, CV_32FC1 );
 	Mat imgo = Faces[3].img.clone();
@@ -126,7 +130,7 @@ void Face::AffineTransform(){
    waitKey(0);
 }
 
-void Face::DelaunayTriangulate(int fl){
+void Face::DelaunayTriangulate(int fl){					// Triangulate the features
 	Rect rect(0, 0, img.size().width, img.size().height);
 	Subdiv2D subdiv(rect); 
 	for(int i =0; i< shape2.size(); i++){
@@ -160,7 +164,8 @@ void Face::DelaunayTriangulate(int fl){
 	imwrite("del.png",img1);
 }
 
-void Face:: Create_morphed_landMark(){ //const fod &Normal, const fod &express, const fod &tobpr){
+void Face:: Create_morphed_landMark(){ 				// Calculates the transform of feature points in the target face
+								// for inducing the expression
 	
 	double factor = Faces[2].length/(double)Faces[0].length;
 	for(int i =0; i< Faces[2].shape2.size(); i++){
@@ -189,12 +194,12 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	Faces[0].img = cv::imread(argv[2], CV_LOAD_IMAGE_COLOR);                                 // Take in all the images, neutral1
-	Faces[1].img = cv::imread(argv[3],CV_LOAD_IMAGE_COLOR);											// Smile1
-   Faces[2].img = cv::imread(argv[4],CV_LOAD_IMAGE_COLOR);                                 // Neutral2
-   Faces[3].img = Mat::zeros(Faces[2].img.rows, Faces[2].img.cols, CV_8UC3);               // Tobsmile2
-
-	dlib::frontal_face_detector detector = dlib::get_frontal_face_detector();
+	Faces[0].img = cv::imread(argv[2], CV_LOAD_IMAGE_COLOR);			// Neutral Face - 1
+	Faces[1].img = cv::imread(argv[3],CV_LOAD_IMAGE_COLOR);				// The expression to be induced							// Smile1
+   	Faces[2].img = cv::imread(argv[4],CV_LOAD_IMAGE_COLOR);                         // Neutral face - 2
+   	Faces[3].img = Mat::zeros(Faces[2].img.rows, Faces[2].img.cols, CV_8UC3);       // To be smile
+											
+	dlib::frontal_face_detector detector = dlib::get_frontal_face_detector();	////Initialising the shape predictor sp,detector
 	dlib::shape_predictor sp;
 	dlib::deserialize(argv[1]) >> sp;
 
